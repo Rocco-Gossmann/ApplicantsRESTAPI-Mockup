@@ -1,0 +1,41 @@
+services:
+
+  # Web-Server
+  # ============================================================================
+  php_server:
+
+    build: 
+      context: ./.setup
+      dockerfile: server.Dockerfile
+
+    ports:
+      - 8081:80
+
+    volumes:
+      - ./app:/var/www/html
+
+    environment:
+      DB_HOST: "db_server"
+      DB_NAME: "application_mockup"
+      DB_USER: "appmock_user"
+      DB_PASS: "lksj@84$6lj dl-k45j-dskjf"
+
+    depends_on:
+      - db_server
+     
+  # Database
+  # ============================================================================
+  db_server:
+    build:
+      context: ./.setup
+      dockerfile: database.Dockerfile
+
+    expose:
+      - "3306"
+
+    volumes:
+      - "./database:/var/lib/mysql"
+
+    environment:
+        MARIADB_ROOT_PASSWORD: "toor"
+      
