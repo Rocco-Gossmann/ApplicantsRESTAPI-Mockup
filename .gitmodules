@@ -1,0 +1,3 @@
+[submodule "app/tests/TestCase/Controller/vendor/rogoss/Curl"]
+	path = app/tests/TestCase/Controller/vendor/rogoss/Curl
+	url = https://github.com/Rocco-Gossmann/PHP-Curl.git

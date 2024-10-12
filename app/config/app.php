@@ -283,11 +283,6 @@ return [
             'driver' => Mysql::class,
             'persistent' => false,
             'timezone' => 'UTC',
-
-            'host' => getenv("DB_HOST"),
-            'username' => getenv("DB_USER"),
-            'password' => getenv("DB_PASS"),
-            'database' => getenv("DB_NAME"),
             
             /*
              * For MariaDB/MySQL the internal default changed from utf8 to utf8mb4, aka full utf-8 support
@@ -338,10 +333,6 @@ return [
             'log' => false,
             //'init' => ['SET GLOBAL innodb_stats_on_metadata = 0'],
 
-            'host' => getenv("DB_HOST") . ":3306",
-            'username' => getenv("DB_USER"),
-            'password' => getenv("DB_PASS"),
-            'database' => getenv("DB_NAME"),
         ],
     ],
 

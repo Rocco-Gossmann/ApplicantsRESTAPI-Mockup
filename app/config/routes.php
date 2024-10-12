@@ -49,6 +49,8 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
 
+    $routes->get("/api/applicants", 'Applicants::getApplicants');
+
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
          * Here, we are connecting '/' (base path) to a controller called 'Pages',
@@ -57,10 +59,10 @@ return function (RouteBuilder $routes): void {
          */
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
 
-        /*
-         * ...and connect the rest of 'Pages' controller's URLs.
-         */
+        /* ...and connect the rest of 'Pages' controller's URLs.  */
         $builder->connect('/pages/*', 'Pages::display');
+
+
 
         /*
          * Connect catchall routes for all controllers.

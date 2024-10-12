@@ -1,11 +1,15 @@
 CREATE DATABASE IF NOT EXISTS application_mockup;
-GRANT ALL ON `application_mockup`.`*` TO 'appmock_user'@'%' IDENTIFIED BY 'lksj@84$6lj dl-k45j-dskjf';
+GRANT ALL ON application_mockup.* TO 'appmock_user'@'%' IDENTIFIED BY 'lksj@84$6lj dl-k45j-dskjf';
 USE application_mockup;
 
 -- Länder sind AI generiert, da dies eine Dummy-Application ist, sollte das ja kein Problem sein. ;-)
 CREATE TABLE IF NOT EXISTS countries (
     co_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     co_label VARCHAR(256),
+
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+    
     CONSTRAINT countries_pk PRIMARY KEY(co_id),
     CONSTRAINT countries_unique_label UNIQUE (co_label)
 );
@@ -45,6 +49,10 @@ CREATE TABLE IF NOT EXISTS cities (
     co_id INT UNSIGNED NOT NULL COMMENT 'Land => `countries`.`co_id`',
     ci_zip VARCHAR(10) NOT NULL COMMENT 'PLZ',
     ci_name VARCHAR(256) NOT NULL COMMENT 'Ort',
+
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+
     CONSTRAINT cities_pk PRIMARY KEY(co_id),
     CONSTRAINT cities_unique_zip UNIQUE(ci_zip)
 );
@@ -58,6 +66,9 @@ CREATE TABLE IF NOT EXISTS applicants(
 
     a_city_street VARCHAR(512) NOT NULL,
     co_id INT UNSIGNED NOT NULL COMMENT "Ort der Adresse aus `cities`.`co_id`",
+
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
     CONSTRAINT applicants_pk PRIMARY KEY(a_id),
     CONSTRAINT applicants_cities_fk FOREIGN KEY(co_id) REFERENCES cities(co_id) ON DELETE RESTRICT
