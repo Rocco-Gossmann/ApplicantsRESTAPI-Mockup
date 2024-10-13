@@ -84,12 +84,19 @@ class Application extends BaseApplication
             // available as array through $request->getData()
             // https://book.cakephp.org/5/en/controllers/middleware.html#body-parser-middleware
             ->add(new BodyParserMiddleware())
+        ;
 
-            // Cross Site Request Forgery (CSRF) Protection Middleware
-            // https://book.cakephp.org/5/en/security/csrf.html#cross-site-request-forgery-csrf-middleware
-            ->add(new CsrfProtectionMiddleware([
-                'httponly' => true,
-            ]));
+        // Cross Site Request Forgery (CSRF) Protection Middleware
+        // https://book.cakephp.org/5/en/security/csrf.html#cross-site-request-forgery-csrf-middleware
+
+        $oCSRF = new CsrfProtectionMiddleware(['httponly' => true]);
+
+        // Disable CrossSiteScripting Check for ApplicantsAPI routes
+        $oCSRF->skipCheckCallback(function ($oRequest) {
+            if (preg_match("#^/api/applicants#", $oRequest->getUri()->getPath()))
+                return true;
+        });
+        $middlewareQueue = $middlewareQueue->add($oCSRF);
 
         return $middlewareQueue;
     }
