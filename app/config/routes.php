@@ -52,6 +52,8 @@ return function (RouteBuilder $routes): void {
     $routes->scope("/api", function(RouteBuilder $builder){
         $builder->get("/applicants", 'Applicants::getApplicants');
         $builder->post("/applicants", 'Applicants::postApplicants');
+        $builder->get("/applicants/{id}", 'Applicants::getApplicant')->setPatterns(['id'=>'[0-9]+']);
+        $builder->delete("/applicants/{id}", 'Applicants::deleteApplicant')->setPatterns(['id'=>'[0-9]+']);
     });
 
 

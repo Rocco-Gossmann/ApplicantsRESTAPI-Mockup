@@ -77,12 +77,14 @@ class ApplicantsController extends \App\Controller\AppController
      * Automatically filled in throug $aFieldMap
      * @var array
      */
-    private static $aDBColumnMap = ["applicants" => [
-        'a_id' => 'id',
-        'ci_name' => 'addr_city',
-        'ci_zip' => 'addr_zip',
-        'co_id' => 'country_id',
-    ]];
+    private static $aDBColumnMap = [
+        "applicants" => [
+            'a_id' => 'id',
+            'ci_name' => 'addr_city',
+            'ci_zip' => 'addr_zip',
+            'co_id' => 'country_id',
+        ]
+    ];
 
     /** @var \App\Model\Table\ApplicantsTable */
     private static $_ApplicantsTable;
@@ -119,6 +121,8 @@ class ApplicantsController extends \App\Controller\AppController
         return [\Cake\View\JsonView::class];
     }
 
+    // BM: Route Handlers
+    //==========================================================================
     public function getApplicants()
     {
         $this->_initClass();
@@ -133,13 +137,13 @@ class ApplicantsController extends \App\Controller\AppController
 
         // Validate Request-Data
         if (empty($aList))
-            return $this->_status_response(400 /* Bad Request */ , "Request enthielt keine Daten");
+            return $this->_status_response(400 /* Bad Request */ , "Request has no data");
 
         if (!is_array($aList))
-            return $this->_status_response(400 /* Bad Request */ , "Request-Body ist kein Array. Bitte übergeben sie ein Array mit anzulegenden Einträgen.");
+            return $this->_status_response(400 /* Bad Request */ , "Request-Body is not an array.");
 
         if (count(array_filter(array_keys($aList), fn($e) => !is_numeric($e))))
-            return $this->_status_response(400 /* Bad Request */ , "Request-Body muss eine Liste mit Elementen sein, nicht das Element selbst");
+            return $this->_status_response(400 /* Bad Request */ , "Request-Body must be a list of elements, not the element itself");
 
 
         /** @var \Cake\Datasource\ConnectionManager $oDB */
@@ -202,8 +206,42 @@ class ApplicantsController extends \App\Controller\AppController
             return;
         }
 
-        xdebug_break();
-        $this->_json_response( $this->_getApplicantsArray($aRegisteredApplicants));
+        $this->_json_response($this->_getApplicantsArray($aRegisteredApplicants));
+
+    }
+
+    public function getApplicant() {
+        self::_initClass(); 
+        $iApplicantID = (int)$this->request->getParam("id");
+        if(empty($iApplicantID)) 
+            return $this->_status_response(400 /* Bad Request */, "no applicant id given ");
+
+        $aApplicants = $this->_getApplicantsArray([$iApplicantID]);
+
+        return $this->_json_response($aApplicants[0]??[]);
+    }
+
+    public function deleteApplicant()
+    {
+        self::_initClass();
+
+        $iApplicantID = (int)$this->request->getParam("id");
+        if(empty($iApplicantID)) 
+            return $this->_status_response(400 /* Bad Request */, "no applicant id given ");
+
+        $oApplicant = self::$_ApplicantsTable->find("all")
+            ->where(['a_id = ' => $iApplicantID])
+            ->first()
+        ;
+
+        if(empty($oApplicant)) 
+            return $this->_status_response(200 /* OK */, "already deleted");
+
+        if(self::$_ApplicantsTable->delete($oApplicant)){
+            return $this->_status_response(200 /* OK */, "deleted");
+        } else {
+            return $this->_status_response(500 /* Not Implemented */ , "failed to delete applicant");
+        }
 
     }
 
@@ -211,7 +249,8 @@ class ApplicantsController extends \App\Controller\AppController
     // BM: Private Helpers
     //===========================================================================
 
-    private function _getApplicantsArray(array $aIdsOnly = []) : array {
+    private function _getApplicantsArray(array $aIdsOnly = []): array
+    {
 
         // no idea, why this is not fetching data for the joined Cities Table :-(
         // $aApplicants = self::$_ApplicantsTable->find('all')
@@ -219,16 +258,17 @@ class ApplicantsController extends \App\Controller\AppController
         //     ->execute()->fetchAll("assoc");
         //
         // I know this works at least.
-        $sSQLWhere = empty($aIdsOnly) 
-            ? "" 
-            : " WHERE a_id IN(".implode(",", array_map('intval', $aIdsOnly)).")" 
+        $sSQLWhere = empty($aIdsOnly)
+            ? ""
+            : " WHERE a_id IN(" . implode(",", array_map('intval', $aIdsOnly)) . ")"
         ;
         return array_map(
-            fn($e) => $this->_convertDBArrToAPIArray("applicants", $e), 
+            fn($e) => $this->_convertDBArrToAPIArray("applicants", $e),
             ConnectionManager::get("default")
-                ->execute("SELECT " 
-                    . implode(",",array_keys(self::$aDBColumnMap['applicants']))
-                    . " FROM applicants LEFT JOIN cities USING(ci_id) " 
+                ->execute(
+                    "SELECT "
+                    . implode(",", array_keys(self::$aDBColumnMap['applicants']))
+                    . " FROM applicants LEFT JOIN cities USING(ci_id) "
                     . $sSQLWhere
                     . " ORDER BY a_id ASC "
                 )
@@ -246,10 +286,11 @@ class ApplicantsController extends \App\Controller\AppController
                     $aApplicant[$sReqField] = $aFieldSettings['default'];
 
                 } elseif (!empty($aFieldSettings['required'])) {
-                    return $this->_status_response(
+                    $this->_status_response(
                         400 /* Bad Request */ ,
                         "{$sErrPrefix} => missing required field '{$sReqField}'"
                     );
+                    return false;
                 }
             }
 
@@ -261,10 +302,11 @@ class ApplicantsController extends \App\Controller\AppController
                             $aFieldSettings['options'] ?? []
                         )
                     ) {
-                        return $this->_status_response(
+                        $this->_status_response(
                             400 /* Bad Request */ ,
                             "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
                         );
+                        return false;
                     }
                     break;
 
@@ -279,10 +321,11 @@ class ApplicantsController extends \App\Controller\AppController
                     )->execute()->fetch();
 
                     if ($oResult === false) {
-                        return $this->_status_response(
+                        $this->_status_response(
                             400 /* Bad Request */ ,
                             "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
                         );
+                        return false;
                     }
 
                     break;
@@ -293,20 +336,21 @@ class ApplicantsController extends \App\Controller\AppController
         return true;
     }
 
-    private function _convertDBArrToAPIArray(string $sTable, array $aDBArr): array {
+    private function _convertDBArrToAPIArray(string $sTable, array $aDBArr): array
+    {
 
-        $aConfig = self::$aDBColumnMap[$sTable]??[];
+        $aConfig = self::$aDBColumnMap[$sTable] ?? [];
 
         $aResponse = [];
-        foreach($aConfig as $sDBField=>$sAPIField) {
-            if(isset($aDBArr[$sDBField]))
+        foreach ($aConfig as $sDBField => $sAPIField) {
+            if (isset($aDBArr[$sDBField]))
                 $aResponse[$sAPIField] = $aDBArr[$sDBField];
         }
 
         return $aResponse;
     }
 
-    private function _json_response(mixed $aResponse)
+    private function _json_response(mixed $aResponse): void
     {
         $this->viewBuilder()
             ->setLayout("ajax")
@@ -315,8 +359,8 @@ class ApplicantsController extends \App\Controller\AppController
         $this->response = $this->response->withType("application/json");
         $this->set("aResponse", $aResponse);
     }
- 
-    private function _status_response($iStatus, $sResponse): bool
+
+    private function _status_response($iStatus, $sResponse): void
     {
         $this->viewBuilder()
             ->setLayout("ajax")
@@ -330,7 +374,6 @@ class ApplicantsController extends \App\Controller\AppController
 
         $this->set("sResponse", $sResponse);
 
-        return false;
     }
 }
 
