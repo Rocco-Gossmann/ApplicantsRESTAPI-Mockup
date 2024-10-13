@@ -16,13 +16,12 @@ use \rogoss\Curl\Curl;
 class ApplicantsAPITest extends TestCase
 {
 
-    private array $aCleanupApplicants = [];
+    public static array $aCleanupApplicants = [];
 
     // GET /api/applicants
     public function testGetApplicants(): void
     {
         $oResult = Curl::GET()->url("http://localhost:8081/api/applicants")
-            ->debug(true)
             ->exec();
 
         $this->_assertCurlSuccess($oResult);
@@ -34,8 +33,9 @@ class ApplicantsAPITest extends TestCase
     // TODO: Implement Test to make sure Accept Header gets ignored
     //       Right now id does not
 
+
     // POST /api/applicants
-    public function testPostApplicantsSuccess(): void
+    public function testPostApplicantsSuccess()
     {
         $oResult = Curl::POST()->url("http://localhost:8081/api/applicants")
             ->header("content-type", "application/json")
@@ -73,10 +73,44 @@ class ApplicantsAPITest extends TestCase
 
         foreach($aBody as $aApplicant)  {
             $this->assertArrayHasKey("id", $aApplicant, "response was supposed to return the id of the created applicant");
-            $this->aCleanupApplicants[] = $aApplicant['id'];
+            self::$aCleanupApplicants[] = $aApplicant['id'];
         }
 
     }
+
+    public function testGetApplicant() {
+        $this->assertGreaterThan(0, count(self::$aCleanupApplicants));
+
+        $oResult = Curl::GET()->url("http://localhost:8081/api/applicants/". self::$aCleanupApplicants[0])
+            ->exec();
+
+        $this->_assertCurlSuccess($oResult);
+        $this->assertNotEmpty($oResult->body);
+        
+    }
+
+    public function testDeleteApplicant() {
+        $this->assertGreaterThan(0, count(self::$aCleanupApplicants));
+
+        foreach(self::$aCleanupApplicants as $iApplicant) {
+            $oResult = Curl::DELETE()->url("http://localhost:8081/api/applicants/". $iApplicant)
+                ->exec();
+
+            $this->_assertCurlSuccess($oResult);
+            $this->assertEquals("deleted", $oResult->body);
+        }
+    }
+
+    public function testDeleteADeletedApplicant() {
+        $oResult = Curl::DELETE()->url("http://localhost:8081/api/applicants/". self::$aCleanupApplicants[0])
+            ->exec();
+
+        $this->_assertCurlSuccess($oResult);
+        $this->assertEquals("already deleted", $oResult->body);
+
+        self::$aCleanupApplicants = [];
+    }
+
 
     // BM: Private Helpers
     //==========================================================================
