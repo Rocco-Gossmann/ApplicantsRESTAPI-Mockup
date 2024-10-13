@@ -1,2 +1,2 @@
-Die Art, wie Sie die Daten abfragen wird nicht unterstützt.
-Stellen Sie sicher, dass sie alle Header richtig gesetzt haben.
+Diese Art der Datenabfrage wird nicht unterstützt.
+Stellen Sie sicher, dass Sie alle Request-Header richtig gesetzt haben.

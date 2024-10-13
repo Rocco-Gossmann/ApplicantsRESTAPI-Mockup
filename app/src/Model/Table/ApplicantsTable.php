@@ -1,8 +1,19 @@
-<?php namespace App\Model\Table;
+<?php
+namespace App\Model\Table;
 
-class ApplicantsTable extends \Cake\ORM\Table {
-    function initialize(array $config): void {
+class ApplicantsTable extends \Cake\ORM\Table
+{
+    function initialize(array $config): void
+    {
         parent::initialize($config);
-        $this->addBehavior("Timestamp");
+        $this
+            ->setTable("applicants")
+            ->addBehavior("Timestamp")
+            ->setPrimaryKey("a_id")
+            ->setEntityClass('App\Model\Entity\Applicant')
+        ;
+        $this->hasOne("cities")
+            ->setForeignKey("ci_id")
+        ;
     }
 }

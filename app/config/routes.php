@@ -49,7 +49,11 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
 
-    $routes->get("/api/applicants", 'Applicants::getApplicants');
+    $routes->scope("/api", function(RouteBuilder $builder){
+        $builder->get("/applicants", 'Applicants::getApplicants');
+        $builder->post("/applicants", 'Applicants::postApplicants');
+    });
+
 
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
@@ -61,7 +65,6 @@ return function (RouteBuilder $routes): void {
 
         /* ...and connect the rest of 'Pages' controller's URLs.  */
         $builder->connect('/pages/*', 'Pages::display');
-
 
 
         /*
