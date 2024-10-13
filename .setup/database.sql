@@ -46,6 +46,7 @@ INSERT IGNORE INTO countries (co_id, co_label) VALUES
 ;
 
 CREATE TABLE IF NOT EXISTS cities (
+    ci_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     co_id INT UNSIGNED NOT NULL COMMENT 'Land => `countries`.`co_id`',
     ci_zip VARCHAR(10) NOT NULL COMMENT 'PLZ',
     ci_name VARCHAR(256) NOT NULL COMMENT 'Ort',
@@ -53,7 +54,7 @@ CREATE TABLE IF NOT EXISTS cities (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
     modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
-    CONSTRAINT cities_pk PRIMARY KEY(co_id),
+    CONSTRAINT cities_pk PRIMARY KEY(ci_id),
     CONSTRAINT cities_unique_zip UNIQUE(ci_zip)
 );
 
@@ -65,11 +66,11 @@ CREATE TABLE IF NOT EXISTS applicants(
     a_lastname VARCHAR(512) NOT NULL COMMENT "Nachname",
 
     a_city_street VARCHAR(512) NOT NULL,
-    co_id INT UNSIGNED NOT NULL COMMENT "Ort der Adresse aus `cities`.`co_id`",
+    ci_id INT UNSIGNED NOT NULL COMMENT "Ort der Adresse aus `cities`.`ci_id`",
 
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
     modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
     CONSTRAINT applicants_pk PRIMARY KEY(a_id),
-    CONSTRAINT applicants_cities_fk FOREIGN KEY(co_id) REFERENCES cities(co_id) ON DELETE RESTRICT
+    CONSTRAINT applicants_cities_fk FOREIGN KEY(ci_id) REFERENCES cities(ci_id) ON DELETE RESTRICT
 );
