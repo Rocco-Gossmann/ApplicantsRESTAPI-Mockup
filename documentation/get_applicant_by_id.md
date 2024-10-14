@@ -1,33 +1,40 @@
-# `GET /api/applicants`
+# `GET /api/applicants/{id}`
 
 <!--toc:start-->
-- [`GET /api/applicants`](#get-apiapplicants)
-  - [Required Headers:](#required-headers)
+- [`GET /api/applicants/{id}`](#get-apiapplicantsid)
+  - [URL Parameters](#url-parameters)
+  - [Required Headers](#required-headers)
   - [Response Codes](#response-codes)
   - [Success Response](#success-response)
     - [Fields per Object](#fields-per-object)
 <!--toc:end-->
 
-Provides a List of all currently registered applicants.
+Provides data for a specific Applicant
+
+## URL Parameters
+| Parameter | Type | Description |
+| - | - | - |
+| `{id}` | `int` | `id` obtained by calling [GET /api/applicants](./get_applicants.md) |
 
 
-## Required Headers:
-
+## Required Headers
 | Header          | Description                                       | Example            |
 |-----------------|---------------------------------------------------|--------------------|
-| `Authorization` | A bearer JWT - Token provided by the API-Provider | `Bearer abc3...fe` |
+| `Authorization` | A Bearer JWT - Token provided by the API-Provider | `Bearer abc3...fe` |
+| `Content-Type`  | Should be set to `application/json`| |
+
 
 ## Response Codes
-
 | Code | Content-Type | Description                                                                                   |
 |------|--------------|-----------------------------------------------------------------------------------------------|
-| 200  | JSON         | List of applicants (see [Success Response](#success-response))<br><br>                      |
+| 200  | JSON         | List of applicants   (see [Success Response](#success-response))<br><br>                      |
+| 404  | Text         | The requested Applicant does not exist on the Server                                          |
 | 403  | None         | The JWT Token you used is invalid                                                             |
 | 500  | Text or HTML | A Server-Side technical error occurred. Should that keep happening, please contact the support |
 
 ## Success Response
 
-A JSON formatted Array of Objects. Each Object is one Applicant.
+The JSON formatted Object. Containing all data for the Applicant.
 
 ### Fields per Object
 
@@ -45,21 +52,15 @@ A JSON formatted Array of Objects. Each Object is one Applicant.
 
 **example:**
 ```json
-[
-    {
-        "id": 84,
-        "gender": "female",
-        "title": "",
-        "firstname": "Maria",
-        "lastname": "Mustermann",
-        "addr_street": "Musterstr. 123",
-        "addr_city": "Musterburg",
-        "addr_zip": "00000",
-        "country_id": 63,
-    },
-
-    {
-        ...
-    }
-]
+{
+    "id": 84,
+    "gender": "female",
+    "title": "",
+    "firstname": "Maria",
+    "lastname": "Mustermann",
+    "addr_street": "Musterstr. 123",
+    "addr_city": "Musterburg",
+    "addr_zip": "00000",
+    "country_id": 63,
+}
 ```
