@@ -2,13 +2,15 @@
 
 A Demo-Application to demonstrate REST based CRUD-Opperations for Applicant-Management
 
-
-> This is a Demo Application, so any validly signed Token will work.
-
-
 ## Information
 - [Project-Setup](./documentation/Projekt_Structur.md)
 
+## Security
+Calling any Endpoint in this API will require a signed JWT-Token that is passed in via the `Authorization` Request Header.
+Failing to do so, will always return a `403 Forbidden` Status Response.
+
+> [!Attention]
+> This is a Demo Application. To keep it simple, any validly signed Token will work.
 
 ## API - Endpoints
 <small>(Click to see Documentation)</small>
