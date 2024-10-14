@@ -2,11 +2,12 @@
 
 namespace App\Controller;
 
-use Cake\Datasource\ConnectionManager;
-
 class ApplicantsController extends \App\Controller\AppController
 {
-    /** @var array
+    /** @var array - When POSTing or PUTing data these fields can be passed in by the Client
+     *  [ [API fieldname] => [ settings ] ] 
+     * 
+     * The following settings are possible:
      * table: the table, the data is stored in
      * 
      * column: the field inside `table` the data is stored in
@@ -26,7 +27,7 @@ class ApplicantsController extends \App\Controller\AppController
      * 
      * refcol: [if `type' == 'ref'] column inside `reftab` that is referenced
      */
-    private static $aFieldMap = [
+    private static $aPOSTFieldMap = [
         "gender" => [
             'table' => "applicants",
             'column' => 'a_gender',
@@ -73,16 +74,19 @@ class ApplicantsController extends \App\Controller\AppController
         ]
     ];
 
-    /**
-     * Automatically filled in throug $aFieldMap
-     * @var array
+    /** @var array - Maps Database-Column-Names to API-Fieldnames
+     * Columns, that are either referenced by the applicants Table 
+     * or are not contained in self::$aPOSTFieldMap
+     * values from the self::$aPOSTFieldMap
+     * 
+     * [ [Database Column Name] => [API Fieldname] ]
      */
-    private static $aDBColumnMap = [
+    private static $aGETDBColumnMap = [
         "applicants" => [
-            'a_id' => 'id',
-            'ci_name' => 'addr_city',
-            'ci_zip' => 'addr_zip',
-            'co_id' => 'country_id',
+            'a_id' => 'id',             // Not part of POST-Fields
+            'ci_name' => 'addr_city',   // Reference to Cities Table
+            'ci_zip' => 'addr_zip',     // Reference to Cities Table
+            'co_id' => 'country_id',    // Reference to Countries Table in Cities
         ]
     ];
 
@@ -99,36 +103,42 @@ class ApplicantsController extends \App\Controller\AppController
         if (self::$bInitialized)
             return;
 
-        foreach (self::$aFieldMap as $sField => $aSettings) {
+        foreach (self::$aPOSTFieldMap as $sField => $aSettings) {
+
+            // Replace defined Table names with ConnectionInterfaces
             if (isset($aSettings['table']))
-                self::$aFieldMap[$sField]['table'] = $this->fetchTable($aSettings['table']);
+                self::$aPOSTFieldMap[$sField]['table'] = $this->fetchTable($aSettings['table']);
 
             if (isset($aSettings['reftab']))
-                self::$aFieldMap[$sField]['reftab'] = $this->fetchTable($aSettings['reftab']);
+                self::$aPOSTFieldMap[$sField]['reftab'] = $this->fetchTable($aSettings['reftab']);
 
-            self::$aDBColumnMap[$aSettings['table']] = self::$aDBColumnMap[$aSettings['table']] ?? [];
-            self::$aDBColumnMap[$aSettings['table']][$aSettings['column']] = $sField;
+            // Hook  $aPOSTFieldMap into $aGETDBColumnMap
+            self::$aGETDBColumnMap[$aSettings['table']] = self::$aGETDBColumnMap[$aSettings['table']] ?? [];
+            self::$aGETDBColumnMap[$aSettings['table']][$aSettings['column']] = $sField;
         }
 
+        // Load Common ConnectionInterfaces
         self::$_ApplicantsTable = $this->fetchTable("applicants");
         self::$_CitiesTable = $this->fetchTable("cities");
 
         self::$bInitialized = true;
     }
 
-    public function viewClasses(): array
-    {
-        return [\Cake\View\JsonView::class];
-    }
-
     // BM: Route Handlers
     //==========================================================================
+    /** GET /api/applicants  - Route
+     * @return void
+     */
     public function getApplicants()
     {
         $this->_initClass();
         $this->_json_response($this->_getApplicantsArray());
     }
 
+    /** 
+     * POST /api/applicants  - Route 
+     * @return void
+     */
     public function postApplicants()
     {
         $this->_initClass();
@@ -145,15 +155,14 @@ class ApplicantsController extends \App\Controller\AppController
         if (count(array_filter(array_keys($aList), fn($e) => !is_numeric($e))))
             return $this->_status_response(400 /* Bad Request */ , "Request-Body must be a list of elements, not the element itself");
 
+        // Start Writing Data to DB
+        self::$_ApplicantsTable->getConnection()->begin();
 
-        /** @var \Cake\Datasource\ConnectionManager $oDB */
-        $oDB = ConnectionManager::get("default");
-        $oDB->execute("START TRANSACTION")->execute();
-
-        /** @var int[] */
+        /** @var int[] - keep track of what Applicants have been created for output later*/
         $aRegisteredApplicants = [];
 
         try {
+            // Foreach Applicant
             foreach ($aList as $iIDX => $aRequestApplicant) {
                 $sErrPrefix = "Applicant {$iIDX}";
                 // Validate the Insert Object
@@ -200,45 +209,55 @@ class ApplicantsController extends \App\Controller\AppController
                 $aRegisteredApplicants[] = $oApplicant->a_id;
             }
 
-            $oDB->execute("COMMIT")->execute();
+            self::$_ApplicantsTable->getConnection()->commit();
         } catch (\Exception $ex) {
-            $oDB->execute("ROLLBACK")->execute();
+            self::$_ApplicantsTable->getConnection()->rollback();
             return;
         }
 
+        // Respond with an  Array of all newly registered Applicants
         $this->_json_response($this->_getApplicantsArray($aRegisteredApplicants));
 
     }
 
-    public function getApplicant() {
-        self::_initClass(); 
-        $iApplicantID = (int)$this->request->getParam("id");
-        if(empty($iApplicantID)) 
-            return $this->_status_response(400 /* Bad Request */, "no applicant id given ");
+    /** 
+     * GET /api/applicants/:id - Route 
+     * @return void
+     */
+    public function getApplicant()
+    {
+        $this->_initClass();
+        $iApplicantID = (int) $this->request->getParam("id");
+        if (empty($iApplicantID))
+            return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
 
         $aApplicants = $this->_getApplicantsArray([$iApplicantID]);
 
-        return $this->_json_response($aApplicants[0]??[]);
+        return $this->_json_response($aApplicants[0] ?? []);
     }
 
+    /** 
+     * DELETE /api/applicants/:id - Route 
+     * @return void
+     */
     public function deleteApplicant()
     {
-        self::_initClass();
+        $this->_initClass();
 
-        $iApplicantID = (int)$this->request->getParam("id");
-        if(empty($iApplicantID)) 
-            return $this->_status_response(400 /* Bad Request */, "no applicant id given ");
+        $iApplicantID = (int) $this->request->getParam("id");
+        if (empty($iApplicantID))
+            return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
 
         $oApplicant = self::$_ApplicantsTable->find("all")
             ->where(['a_id = ' => $iApplicantID])
             ->first()
         ;
 
-        if(empty($oApplicant)) 
-            return $this->_status_response(200 /* OK */, "already deleted");
+        if (empty($oApplicant))
+            return $this->_status_response(200 /* OK */ , "already deleted");
 
-        if(self::$_ApplicantsTable->delete($oApplicant)){
-            return $this->_status_response(200 /* OK */, "deleted");
+        if (self::$_ApplicantsTable->delete($oApplicant)) {
+            return $this->_status_response(200 /* OK */ , "deleted");
         } else {
             return $this->_status_response(500 /* Not Implemented */ , "failed to delete applicant");
         }
@@ -249,9 +268,13 @@ class ApplicantsController extends \App\Controller\AppController
     // BM: Private Helpers
     //===========================================================================
 
+    /**
+     * get An array with response-Read Applicants data
+     * @param array $aIdsOnly
+     * @return array
+     */
     private function _getApplicantsArray(array $aIdsOnly = []): array
     {
-
         // no idea, why this is not fetching data for the joined Cities Table :-(
         // $aApplicants = self::$_ApplicantsTable->find('all')
         //     ->contains("cities")
@@ -262,12 +285,13 @@ class ApplicantsController extends \App\Controller\AppController
             ? ""
             : " WHERE a_id IN(" . implode(",", array_map('intval', $aIdsOnly)) . ")"
         ;
+
         return array_map(
             fn($e) => $this->_convertDBArrToAPIArray("applicants", $e),
-            ConnectionManager::get("default")
+            self::$_ApplicantsTable->getConnection()
                 ->execute(
                     "SELECT "
-                    . implode(",", array_keys(self::$aDBColumnMap['applicants']))
+                    . implode(",", array_keys(self::$aGETDBColumnMap['applicants']))
                     . " FROM applicants LEFT JOIN cities USING(ci_id) "
                     . $sSQLWhere
                     . " ORDER BY a_id ASC "
@@ -279,7 +303,7 @@ class ApplicantsController extends \App\Controller\AppController
 
     private function _validateRequestObject(array $aRequestApplicant, string $sErrPrefix): bool
     {
-        foreach (self::$aFieldMap as $sReqField => $aFieldSettings) {
+        foreach (self::$aPOSTFieldMap as $sReqField => $aFieldSettings) {
 
             if (empty(trim($aRequestApplicant[$sReqField] ?? ""))) {
                 if (!empty($aFieldSettings['default'])) {
@@ -338,8 +362,7 @@ class ApplicantsController extends \App\Controller\AppController
 
     private function _convertDBArrToAPIArray(string $sTable, array $aDBArr): array
     {
-
-        $aConfig = self::$aDBColumnMap[$sTable] ?? [];
+        $aConfig = self::$aGETDBColumnMap[$sTable] ?? [];
 
         $aResponse = [];
         foreach ($aConfig as $sDBField => $sAPIField) {
