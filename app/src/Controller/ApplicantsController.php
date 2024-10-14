@@ -246,6 +246,8 @@ class ApplicantsController extends \App\Controller\AppController
             return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
 
         $aApplicants = $this->_getApplicantsArray([$iApplicantID]);
+        if(empty($aApplicants))
+            return $this->_status_response(404 /* Not Found */, "applicant not found");
 
         return $this->_json_response($aApplicants[0] ?? []);
     }
