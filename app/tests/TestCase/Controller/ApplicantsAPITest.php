@@ -18,10 +18,13 @@ class ApplicantsAPITest extends TestCase
     public static array $aCleanupCities = [];
 
     public static function setUpBeforeClass(): void
-    { self::$iUniqueID = time(); }
+    {
+        self::$iUniqueID = time();
+    }
 
 
-    public function testJWTMiddlewareLockout(): void {
+    public function testJWTMiddlewareLockout(): void
+    {
         $oResult = Curl::GET()->url("http://localhost:8081/api/applicants")
             ->exec();
 
@@ -40,7 +43,6 @@ class ApplicantsAPITest extends TestCase
 
         $aBody = json_decode($oResult->body, true);
         $this->assertIsArray($aBody);
-
     }
     public function testGetApplicantsWithAcceptHeader(): void
     {
@@ -52,7 +54,6 @@ class ApplicantsAPITest extends TestCase
         $this->_assertCurlSuccess($oResult);
         $aBody = json_decode($oResult->body, true);
         $this->assertIsArray($aBody);
-
     }
 
 
@@ -98,7 +99,6 @@ class ApplicantsAPITest extends TestCase
             $this->assertArrayHasKey("id", $aApplicant, "response was supposed to return the id of the created applicant");
             self::$aCleanupApplicants[] = $aApplicant['id'];
         }
-
     }
 
     public function testPostApplicantWithSameNameAndLocationTwice()
@@ -141,7 +141,6 @@ class ApplicantsAPITest extends TestCase
 
         $this->_assertCurlSuccess($oResult);
         $this->assertNotEmpty($oResult->body);
-
     }
 
     public function testPutApplicant()
@@ -182,6 +181,30 @@ class ApplicantsAPITest extends TestCase
         $this->_assertEqualProp($aReqBody, $aBody, 'firstname');
         $this->_assertEqualProp($aReqBody, $aBody, 'addr_street');
         $this->_assertEqualProp($aReqBody, $aBody, 'country_id');
+    }
+
+    public function testPutApplicant_WithDataofOtherApplicant()
+    {
+
+        $this->assertGreaterThan(1, count(self::$aCleanupApplicants));
+
+        $aReqBody = [
+            "firstname" => "Maria " . self::$iUniqueID,
+            "lastname" => "Mustermann",
+            "addr_street" => "Musterstr. 123",
+            "addr_zip" => "00000",
+            "addr_city" => "Musterburg",
+            "country_id" => 63 /* Germany */
+        ];
+
+        $oResult = Curl::PUT()->url("http://localhost:8081/api/applicants/" . self::$aCleanupApplicants[1])
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
+            ->header("content-type", "application/json")
+            ->body(json_encode($aReqBody))
+            ->exec();
+
+        $this->assertNotEmpty($oResult);
+        $this->assertEquals(409, $oResult->status, "Expected server to raise a conflict. It did not");
 
     }
 
@@ -201,6 +224,7 @@ class ApplicantsAPITest extends TestCase
 
     public function testDeleteADeletedApplicant()
     {
+
         $oResult = Curl::DELETE()->url("http://localhost:8081/api/applicants/" . self::$aCleanupApplicants[0])
             ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->exec();

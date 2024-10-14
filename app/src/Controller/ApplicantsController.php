@@ -7,26 +7,26 @@ use Cake\Database\Exception\QueryException;
 class ApplicantsController extends \App\Controller\AppController
 {
     /** @var array - When POSTing or PUTing data these fields can be passed in by the Client
-     *  [ [API fieldname] => [ settings ] ] 
-     * 
+     *  [ [API fieldname] => [ settings ] ]
+     *
      * The following settings are possible:
      * table: the table, the data is stored in
-     * 
+     *
      * column: the field inside `table` the data is stored in
-     * 
+     *
      * required: if true, the field must not be empty
-     * 
+     *
      * default: value that is set if field is empty and `required` is false/not set
      *          overrides required if set
-     * 
+     *
      * type:  enum -> reads options from table column
      *        string -> raw string
      *        ref -> reference from other table
      *
      * options: [if `type' == 'enum' ] valid options, that can be inserted
-     * 
+     *
      * reftab: [if `type` == 'ref'] table that is referenced
-     * 
+     *
      * refcol: [if `type' == 'ref'] column inside `reftab` that is referenced
      */
     private static $aPOSTFieldMap = [
@@ -77,11 +77,11 @@ class ApplicantsController extends \App\Controller\AppController
     ];
 
     /** @var array - Maps Database-Column-Names to API-Fieldnames
-     * Columns, that are either referenced by the applicants Table 
+     * Columns, that are either referenced by the applicants Table
      * or are not contained in self::$aPOSTFieldMap
      * values from the self::$aPOSTFieldMap
-     * 
-     * [ 
+     *
+     * [
      *  [Database Table Name] => [
      *      [Column Name] => [API Fieldname] ]
      *  ]
@@ -98,7 +98,7 @@ class ApplicantsController extends \App\Controller\AppController
 
     /** @var array - Maps what API-Field corresponds to what Database Field for a Put-Reqeust
      *  content will be automatically derived from  self::$aPOSTFieldMap
-     * [ 
+     * [
      *  [Database Table Name] => [
      *      [Column Name] => [API Fieldname] ]
      *  ]
@@ -154,8 +154,8 @@ class ApplicantsController extends \App\Controller\AppController
         $this->_json_response($this->_getApplicantsArray());
     }
 
-    /** 
-     * POST /api/applicants  - Route 
+    /**
+     * POST /api/applicants  - Route
      * @return void
      */
     public function postApplicants()
@@ -198,11 +198,10 @@ class ApplicantsController extends \App\Controller\AppController
                 $oApplicant = self::$_ApplicantsTable->find()->select("a_id")->where([
                     "a_firstname" => $aRequestApplicant['firstname'],
                     "a_lastname" => $aRequestApplicant['lastname'],
-                    "a_city_street" => $aRequestApplicant['addr_street'],
                     "ci_id" => (int) $oCity->ci_id,
                 ])->first();
 
-                
+
                 if(empty($oApplicant)) {
                     $oApplicant = self::$_ApplicantsTable->newEmptyEntity();
                     $oApplicant->a_gender = $aRequestApplicant['gender'];
@@ -234,8 +233,8 @@ class ApplicantsController extends \App\Controller\AppController
 
     }
 
-    /** 
-     * GET /api/applicants/:id - Route 
+    /**
+     * GET /api/applicants/:id - Route
      * @return void
      */
     public function getApplicant()
@@ -311,14 +310,23 @@ class ApplicantsController extends \App\Controller\AppController
             $oApplicant[$sDBColumn] = $aBody[$sAPIField];
         }
 
+        $oExistingApplicant = self::$_ApplicantsTable->find()->select("a_id")->where([
+            "a_firstname" => $oApplicant->a_firstname,
+            "a_lastname" => $oApplicant->a_lastname,
+            "ci_id" => $oApplicant->ci_id
+        ])->first();
+
+        if(!empty($oExistingApplicant) && $oExistingApplicant->a_id != $oApplicant->a_id)
+            return $this->_status_response(409 /* Conflict */, "found different applicant with the same name in the same city");
+
         $oApplicant = self::$_ApplicantsTable->save($oApplicant);
 
         $this->_json_response($this->_getApplicantsArray([$iApplicantID])[0]);
 
     }
 
-    /** 
-     * DELETE /api/applicants/:id - Route 
+    /**
+     * DELETE /api/applicants/:id - Route
      * @return void
      */
     public function deleteApplicant()

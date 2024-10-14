@@ -63,8 +63,9 @@ These are the Properties, that each Applicant can consist of.
 |------|--------------|-----------------------------------------------------------------------------------------------------------------------|
 | 200  | JSON         | The List of created applicants in the order you submitted them in (see [Success Response](#success-response))<br><br> |
 | 400  | Text         | The Data you proved is invalid. The Response body contains more info about what went wrong.
-| 404  | Text         | The requested Applicant does not exist on the Server                                          |
 | 403  | None         | The JWT Token you used is invalid                                                                                     |
+| 404  | Text         | The requested Applicant does not exist on the Server                                          |
+| 409  | Text         | The Name and City you entered does match that of a different Applicant. 
 | 500  | Text or HTML | A Server-Side technical error occurred. Should that keep happening, please contact the support                         |
 
 
