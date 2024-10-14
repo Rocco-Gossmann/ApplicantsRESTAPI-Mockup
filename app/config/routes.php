@@ -50,10 +50,13 @@ return function (RouteBuilder $routes): void {
     $routes->setRouteClass(DashedRoute::class);
 
     $routes->scope("/api", function(RouteBuilder $builder){
+        $aApplicantIDPattern = ['id'=>'[0-9]+'];
+
         $builder->get("/applicants", 'Applicants::getApplicants');
         $builder->post("/applicants", 'Applicants::postApplicants');
-        $builder->get("/applicants/{id}", 'Applicants::getApplicant')->setPatterns(['id'=>'[0-9]+']);
-        $builder->delete("/applicants/{id}", 'Applicants::deleteApplicant')->setPatterns(['id'=>'[0-9]+']);
+        $builder->get("/applicants/{id}", 'Applicants::getApplicant')->setPatterns($aApplicantIDPattern);
+        $builder->put("/applicants/{id}", 'Applicants::putApplicant')->setPatterns($aApplicantIDPattern);
+        $builder->delete("/applicants/{id}", 'Applicants::deleteApplicant')->setPatterns($aApplicantIDPattern);
     });
 
 

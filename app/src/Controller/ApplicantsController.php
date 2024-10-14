@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Cake\Database\Exception\QueryException;
+
 class ApplicantsController extends \App\Controller\AppController
 {
     /** @var array - When POSTing or PUTing data these fields can be passed in by the Client
@@ -79,7 +81,11 @@ class ApplicantsController extends \App\Controller\AppController
      * or are not contained in self::$aPOSTFieldMap
      * values from the self::$aPOSTFieldMap
      * 
-     * [ [Database Column Name] => [API Fieldname] ]
+     * [ 
+     *  [Database Table Name] => [
+     *      [Column Name] => [API Fieldname] ]
+     *  ]
+     * ]
      */
     private static $aGETDBColumnMap = [
         "applicants" => [
@@ -89,6 +95,16 @@ class ApplicantsController extends \App\Controller\AppController
             'co_id' => 'country_id',    // Reference to Countries Table in Cities
         ]
     ];
+
+    /** @var array - Maps what API-Field corresponds to what Database Field for a Put-Reqeust
+     *  content will be automatically derived from  self::$aPOSTFieldMap
+     * [ 
+     *  [Database Table Name] => [
+     *      [Column Name] => [API Fieldname] ]
+     *  ]
+     * ]
+     */
+    private static $aPUTDBColumnMap = [];
 
     /** @var \App\Model\Table\ApplicantsTable */
     private static $_ApplicantsTable;
@@ -115,6 +131,9 @@ class ApplicantsController extends \App\Controller\AppController
             // Hook  $aPOSTFieldMap into $aGETDBColumnMap
             self::$aGETDBColumnMap[$aSettings['table']] = self::$aGETDBColumnMap[$aSettings['table']] ?? [];
             self::$aGETDBColumnMap[$aSettings['table']][$aSettings['column']] = $sField;
+
+            self::$aPUTDBColumnMap[$aSettings['table']] = self::$aPUTDBColumnMap[$aSettings['table']] ?? [];
+            self::$aPUTDBColumnMap[$aSettings['table']][$sField] = $aSettings['column'];
         }
 
         // Load Common ConnectionInterfaces
@@ -169,50 +188,45 @@ class ApplicantsController extends \App\Controller\AppController
                 if (!$this->_validateRequestObject($aRequestApplicant, $sErrPrefix))
                     throw new \Exception("invalid request object");
 
-                // Process City
-                $sNormalizedZip = trim(strtolower($aRequestApplicant['addr_zip']));
+                $oCity = $this->_getCity(
+                    $aRequestApplicant['addr_zip'],
+                    $aRequestApplicant['addr_city'],
+                    (int) $aRequestApplicant['country_id']
+                );
 
-                $oCity = self::$_CitiesTable->find()
-                    ->where([
-                        'ci_zip = ' => $sNormalizedZip,
-                        'co_id = ' => $aRequestApplicant['country_id']
-                    ])->first();
+                // Check if an Applicant may already exists
+                $oApplicant = self::$_ApplicantsTable->find()->select("a_id")->where([
+                    "a_firstname" => $aRequestApplicant['firstname'],
+                    "a_lastname" => $aRequestApplicant['lastname'],
+                    "a_city_street" => $aRequestApplicant['addr_street'],
+                    "ci_id" => (int) $oCity->ci_id,
+                ])->first();
 
-                // If that particular City was not registered yet, Register it
-                if (empty($oCity)) {
-                    $oCity = self::$_CitiesTable->newEmptyEntity();
-                    $oCity->co_id = (int) $aRequestApplicant['country_id'];
-                    $oCity->ci_zip = $sNormalizedZip;
-                    $oCity->ci_name = trim($aRequestApplicant['addr_city']);
+                
+                if(empty($oApplicant)) {
+                    $oApplicant = self::$_ApplicantsTable->newEmptyEntity();
+                    $oApplicant->a_gender = $aRequestApplicant['gender'];
+                    $oApplicant->a_title = $aRequestApplicant['title'];
+                    $oApplicant->a_firstname = $aRequestApplicant['firstname'];
+                    $oApplicant->a_lastname = $aRequestApplicant['lastname'];
+                    $oApplicant->a_city_street = $aRequestApplicant['addr_street'];
+                    $oApplicant->ci_id = (int) $oCity->ci_id;
 
-                    $oCity = self::$_CitiesTable->save($oCity);
-                    if (empty($oCity)) {
-                        $this->_status_response(500 /* Internal Error */ , "{$sErrPrefix} => Failed to register city");
-                        throw new \Exception("failed to created city in db");
+                    self::$_ApplicantsTable->save($oApplicant);
+                    if (empty($oApplicant)) {
+                        $this->_status_response(500 /* Internal Error */ , "{$sErrPrefix} => Failed to register applicant");
+                        throw new \Exception("failed to created applicant in db");
                     }
-                }
-
-                $oApplicant = self::$_ApplicantsTable->newEmptyEntity();
-                $oApplicant->a_gender = $aRequestApplicant['gender'];
-                $oApplicant->a_title = $aRequestApplicant['title'];
-                $oApplicant->a_firstname = $aRequestApplicant['firstname'];
-                $oApplicant->a_lastname = $aRequestApplicant['lastname'];
-                $oApplicant->a_city_street = $aRequestApplicant['addr_street'];
-                $oApplicant->ci_id = (int) $oCity->ci_id;
-
-                self::$_ApplicantsTable->save($oApplicant);
-                if (empty($oApplicant)) {
-                    $this->_status_response(500 /* Internal Error */ , "{$sErrPrefix} => Failed to register applicant");
-                    throw new \Exception("failed to created applicant in db");
                 }
 
                 $aRegisteredApplicants[] = $oApplicant->a_id;
             }
 
             self::$_ApplicantsTable->getConnection()->commit();
+
         } catch (\Exception $ex) {
             self::$_ApplicantsTable->getConnection()->rollback();
-            return;
+            return $this->_status_response(500, $ex->getMessage());
         }
 
         // Respond with an  Array of all newly registered Applicants
@@ -227,13 +241,78 @@ class ApplicantsController extends \App\Controller\AppController
     public function getApplicant()
     {
         $this->_initClass();
-        $iApplicantID = (int) $this->request->getParam("id");
-        if (empty($iApplicantID))
+
+        if (empty($iApplicantID = (int) $this->request->getParam("id")))
             return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
 
         $aApplicants = $this->_getApplicantsArray([$iApplicantID]);
 
         return $this->_json_response($aApplicants[0] ?? []);
+    }
+
+    /** PUT /api/applicants/:id - Route
+     * @return void
+     */
+    public function putApplicant()
+    {
+        $this->_initClass();
+
+        if (empty($iApplicantID = (int) $this->request->getParam("id")))
+            return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
+
+        if (empty($oApplicant = self::$_ApplicantsTable->find()->where(['a_id' => (int) $iApplicantID])->first()))
+            return $this->_status_response(404 /* Not Found */ , "applicant does not exist");
+
+        if (empty($aBody = $this->request->getData()))
+            return $this->_status_response(400 /* Bad Request */ , "you did not set any changed fields");
+
+        // Check for Address changes
+        $iAddrChangeFlag =
+            (!empty(trim($aBody['addr_zip'] ?? "")) ? 1 : 0) +
+            (!empty(trim($aBody['addr_city'] ?? "")) ? 2 : 0) +
+            (!empty(trim($aBody['country_id'] ?? "")) ? 4 : 0)
+        ;
+
+        $bChangeCity = false;
+        switch ($iAddrChangeFlag) {
+            case 7:  // All required Adress-changing fields are set => change adress
+                $oCity = $this->_getCity(
+                    $aBody['addr_zip'],
+                    $aBody['addr_city'],
+                    (int) $aBody['country_id']
+                );
+                $bChangeCity = true;
+
+            case 0: // No Adress-changing field is set => no change  required
+                break;
+
+            default: // only some Adress-changing fields are set => error
+                return $this->_status_response(400 /* Bad Request */ , "to change the adress, you must provide addr_zip, addr_city and country_id together");
+        }
+
+        if ($bChangeCity)
+            $oApplicant->ci_id = $oCity->ci_id;
+
+        // Check for all other changes
+        foreach (self::$aPUTDBColumnMap['applicants'] as $sAPIField => $sDBColumn) {
+            // If no change requested for that field => check next field
+            if (!isset($aBody[$sAPIField]))
+                continue;
+
+            $aSettings = self::$aPOSTFieldMap[$sAPIField];
+
+            // if even one of the changed fields is invalid => end execution
+            // (_validateRequestObjectField takes care of writing the response message)
+            if (!$this->_validateRequestObjectField($aBody, $sAPIField, $aSettings))
+                return;
+
+            $oApplicant[$sDBColumn] = $aBody[$sAPIField];
+        }
+
+        $oApplicant = self::$_ApplicantsTable->save($oApplicant);
+
+        $this->_json_response($this->_getApplicantsArray([$iApplicantID])[0]);
+
     }
 
     /** 
@@ -244,8 +323,7 @@ class ApplicantsController extends \App\Controller\AppController
     {
         $this->_initClass();
 
-        $iApplicantID = (int) $this->request->getParam("id");
-        if (empty($iApplicantID))
+        if (empty($iApplicantID = (int) $this->request->getParam("id")))
             return $this->_status_response(400 /* Bad Request */ , "no applicant id given ");
 
         $oApplicant = self::$_ApplicantsTable->find("all")
@@ -265,12 +343,41 @@ class ApplicantsController extends \App\Controller\AppController
     }
 
 
+
     // BM: Private Helpers
     //===========================================================================
 
+    private function _getCity(string $sZipCode, string $sCityName, int $iCountryId, string $sErrPrefix = ""): ?\App\Model\Entity\City
+    {
+        $sNormalizedZip = trim(strtolower($sZipCode));
+
+        $oCity = self::$_CitiesTable->find()
+            ->where([
+                'ci_zip = ' => $sNormalizedZip,
+                'co_id = ' => $iCountryId
+            ])->first();
+
+        // If that particular City was not registered yet, Register it
+        if (empty($oCity)) {
+            $oCity = self::$_CitiesTable->newEmptyEntity();
+            $oCity->co_id = $iCountryId;
+            $oCity->ci_zip = $sNormalizedZip;
+            $oCity->ci_name = trim($sCityName);
+
+            $oCity = self::$_CitiesTable->save($oCity);
+
+            if (empty($oCity)) {
+                $this->_status_response(500 /* Internal Error */ , "{$sErrPrefix} => Failed to register city");
+                return null;
+            }
+        }
+
+        return $oCity;
+    }
+
     /**
      * get An array with response-Read Applicants data
-     * @param array $aIdsOnly
+     * @param array $aIdsOnly - limit response to applicats with the given IDs
      * @return array
      */
     private function _getApplicantsArray(array $aIdsOnly = []): array
@@ -304,57 +411,64 @@ class ApplicantsController extends \App\Controller\AppController
     private function _validateRequestObject(array $aRequestApplicant, string $sErrPrefix): bool
     {
         foreach (self::$aPOSTFieldMap as $sReqField => $aFieldSettings) {
+            if (!$this->_validateRequestObjectField($aRequestApplicant, $sReqField, $aFieldSettings, $sErrPrefix))
+                return false;
+        }
 
-            if (empty(trim($aRequestApplicant[$sReqField] ?? ""))) {
-                if (!empty($aFieldSettings['default'])) {
-                    $aApplicant[$sReqField] = $aFieldSettings['default'];
+        return true;
+    }
 
-                } elseif (!empty($aFieldSettings['required'])) {
+    private function _validateRequestObjectField(array $aRequestApplicant, string $sReqField, array $aFieldSettings, string $sErrPrefix = ""): bool
+    {
+
+        if (empty(trim($aRequestApplicant[$sReqField] ?? ""))) {
+            if (!empty($aFieldSettings['default'])) {
+                $aApplicant[$sReqField] = $aFieldSettings['default'];
+
+            } elseif (!empty($aFieldSettings['required'])) {
+                $this->_status_response(
+                    400 /* Bad Request */ ,
+                    "{$sErrPrefix} => missing required field '{$sReqField}'"
+                );
+                return false;
+            }
+        }
+
+        switch ($aFieldSettings['type'] ?? "string") {
+            case "enum":
+                if (
+                    !in_array(
+                        $aRequestApplicant[$sReqField],
+                        $aFieldSettings['options'] ?? []
+                    )
+                ) {
                     $this->_status_response(
                         400 /* Bad Request */ ,
-                        "{$sErrPrefix} => missing required field '{$sReqField}'"
+                        "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
                     );
                     return false;
                 }
-            }
+                break;
 
-            switch ($aFieldSettings['type'] ?? "string") {
-                case "enum":
-                    if (
-                        !in_array(
-                            $aRequestApplicant[$sReqField],
-                            $aFieldSettings['options'] ?? []
-                        )
-                    ) {
-                        $this->_status_response(
-                            400 /* Bad Request */ ,
-                            "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
-                        );
-                        return false;
-                    }
-                    break;
+            case "ref":
+                /** @var \Cake\ORM\Table $oRefTable */
+                $oRefTable = $aFieldSettings['reftab'];
 
-                case "ref":
-                    /** @var \Cake\ORM\Table $oRefTable */
-                    $oRefTable = $aFieldSettings['reftab'];
+                $oResult = $oRefTable->find(
+                    "all",
+                    conditions: ["`" . $aFieldSettings['refcol'] . "` = " => $aRequestApplicant[$sReqField]],
+                    limit: 1
+                )->execute()->fetch();
 
-                    $oResult = $oRefTable->find(
-                        "all",
-                        conditions: ["`" . $aFieldSettings['refcol'] . "` = " => $aRequestApplicant[$sReqField]],
-                        limit: 1
-                    )->execute()->fetch();
+                if ($oResult === false) {
+                    $this->_status_response(
+                        400 /* Bad Request */ ,
+                        "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
+                    );
+                    return false;
+                }
 
-                    if ($oResult === false) {
-                        $this->_status_response(
-                            400 /* Bad Request */ ,
-                            "{$sErrPrefix} => Field '{$sReqField}' has a none available value"
-                        );
-                        return false;
-                    }
-
-                    break;
-            }
-
+                break;
         }
 
         return true;

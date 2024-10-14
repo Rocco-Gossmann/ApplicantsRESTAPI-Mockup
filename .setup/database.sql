@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS application_mockup;
 GRANT ALL ON application_mockup.* TO 'appmock_user'@'%' IDENTIFIED BY 'lksj@84$6lj dl-k45j-dskjf';
 USE application_mockup;
 
--- Länder sind AI generiert, da dies eine Dummy-Application ist, sollte das ja kein Problem sein. ;-)
+-- Coutries are an LLM generated list, Since this is a Dummy App, it should not matter anyways. ;-)
 CREATE TABLE IF NOT EXISTS countries (
     co_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     co_label VARCHAR(256),
@@ -73,4 +73,6 @@ CREATE TABLE IF NOT EXISTS applicants(
 
     CONSTRAINT applicants_pk PRIMARY KEY(a_id),
     CONSTRAINT applicants_cities_fk FOREIGN KEY(ci_id) REFERENCES cities(ci_id) ON DELETE RESTRICT
+
+    UNIQUE KEY applicants_unique (`a_firstname`,`a_lastname`,`a_city_street`,`ci_id`) USING HASH,
 );
