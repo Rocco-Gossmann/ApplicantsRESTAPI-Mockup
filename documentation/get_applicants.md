@@ -11,7 +11,7 @@
 Provides a List of all currently registered applicants.
 
 
-## Required Headers:
+## Required Headers
 
 | Header          | Description                                       | Example            |
 |-----------------|---------------------------------------------------|--------------------|

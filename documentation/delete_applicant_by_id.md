@@ -2,9 +2,9 @@
 
 <!--toc:start-->
 - [`DELETE /api/applicants/{id}`](#delete-apiapplicantsid)
-  - [URL Params](#url-params)
-  - [Special Behavior:](#special-behavior)
-  - [Required Headers:](#required-headers)
+  - [URL Parameters](#url-parameters)
+  - [Special Behavior](#special-behavior)
+  - [Required Headers](#required-headers)
   - [Response Codes](#response-codes)
 <!--toc:end-->
 
@@ -16,7 +16,7 @@ Removes a specific Applicant from the Database.
 | `{id}` | `int` | `id` obtained by calling [GET /api/applicants](./get_applicants.md) |
 
 
-## Special Behavior:
+## Special Behavior
 
 If you request the deletion of an already deleted Applicant, you'll receive a 
 Success Message regardless. 
@@ -24,7 +24,7 @@ Success Message regardless.
 Reason being, that the goal of the Applicant no longer being in the system was fullfilled.
 
 
-## Required Headers:
+## Required Headers
 
 | Header          | Description                                       | Example            |
 |-----------------|---------------------------------------------------|--------------------|
