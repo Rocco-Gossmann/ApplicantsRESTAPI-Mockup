@@ -38,6 +38,11 @@
 						"key": "Content-Type",
 						"value": "application/json",
 						"type": "default"
+					},
+					{
+						"key": "Au",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA",
+						"type": "default"
 					}
 				],
 				"body": {
@@ -45,14 +50,14 @@
 					"raw": "{\n    \"gender\": \"female\",\n    \"title\": \"Dr. \"\n}"
 				},
 				"url": {
-					"raw": "{{URL}}/api/applicants/64",
+					"raw": "{{URL}}/api/applicants/48",
 					"host": [
 						"{{URL}}"
 					],
 					"path": [
 						"api",
 						"applicants",
-						"64"
+						"48"
 					]
 				}
 			},
@@ -94,6 +99,12 @@
 						"key": "Content-Type",
 						"value": "application/json",
 						"type": "default"
+					},
+					{
+						"key": "Cookie",
+						"value": "XDEBUG_SESSION=VSCODE",
+						"type": "default",
+						"disabled": true
 					}
 				],
 				"body": {
@@ -119,6 +130,16 @@
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",

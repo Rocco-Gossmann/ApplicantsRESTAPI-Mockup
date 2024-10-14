@@ -1,117 +1,109 @@
-Inhalt:
+# Project Environment
+
 <!-- TOC -->
 
-- [Projekt Umgebung](#projekt-umgebung)
-    - [Container 1 ist der 'php_server'.](#container-1-ist-der-php_server)
-    - [Container 2 ist der 'db_server'.](#container-2-ist-der-db_server)
-- [Das Projekt installieren](#das-projekt-installieren)
-- [Projekt Ordner](#projekt-ordner)
-    - [setup - Ordner](#setup---ordner)
+- [Project Environment](#project-environment)
+    - [Container 1: 'php_server'.](#container-1-php_server)
+    - [Container 2: 'db_server'.](#container-2-db_server)
+- [Installing the Project](#installing-the-project)
+- [Project Folders](#project-folders)
+    - [setup - Folder](#setup---folder)
         - [/.setup/000-default.conf](#setup000-defaultconf)
         - [/.setup/database.Dockerfile](#setupdatabasedockerfile)
         - [/.setup/database.sql](#setupdatabasesql)
         - [/.setup/server.Dockerfile](#setupserverdockerfile)
-    - [docker-compose.yml - Datei](#docker-composeyml---datei)
-    - [database - Ordner](#database---ordner)
+    - [docker-compose.yml](#docker-composeyml)
+    - [database - Folder](#database---folder)
     - [app - Order](#app---order)
-- [Server-Umgebung starten](#server-umgebung-starten)
-- [Alle Server herrunterfahren](#alle-server-herrunterfahren)
+- [Starting the Envorinment](#starting-the-envorinment)
+- [Shutting down all Servers](#shutting-down-all-servers)
 
 <!-- /TOC -->
 
+The Project runs via a Docker composition.
+The composition contains 2 containers.
+
+## Container 1: 'php_server'.
+
+This Container provides an Apache2 + PHP8.3 - Server that compes preinstalled 
+With PHP-Composer and CakePHP as well as all needed PHP-Extensions.
 
 
-# Projekt Umgebung
+## Container 2: 'db_server'.
 
-Das Projekt wird mittels Docker gehostet.
-Es gibt 2 Container. Diese sind mittels Docker-Compose verbunden.
-
-## Container 1 ist der 'php_server'.
-
-Dieser Container erzeugt einen Apache2 + PHP8.3 - Server, in dem PHP-Composer 
-und alle für CakePHP nötigen PHP-Extensions installiert sind.
+This is a MariaDB - Database server that comes preinstalled with the 
+`mycli` database - client. If you want to change the Database, attach to the containers shell and run `mycli`
 
 
-## Container 2 ist der 'db_server'.
+# Installing the Project
 
-Dieser stellt eine MariaDB - Datenbank bereit, welche vom Container 1 
-verwendet wird.
+1.) Make sure yoiu have Docker and Docker-Compose running on your System
 
-# Das Projekt installieren
-
-- Zur Installation des Projektes, stellen Sie zunächst Sicher, dass Docker und 
-Docker-Compose auf Ihrem System installiert sind
-
-- Klonen Sie nun das Projekt.
+2.) Clone this Repo
 ```bash
 git clone https://github.com/rocco-gossmann/AppManMockup
 ```
-
-- Wechseln Sie in das Projekt.
+3.) CD into the Project
 ```bash
 cd AppManMockup
 ```
 
-- Starten Sie die Server mittels
+4.) Run the Composition via
 ```bash
 docker-compose up
 ```
 
 > [!info]  
-> Der erste Start kann etwas dauern, da Docker zunächst alle für den 
-> Server nötigen Dateien herunterladen muss.
+> The first Start will take some time, because Docker needs to Download and
+> install all required files and applications in the Containers.
 >
-> Alle folgenden Starts werden viel Schneller gehen.
+> All following starts will be much quicker.
 
-# Projekt Ordner
+# Project Folders
 
-Dieses Projekt is wie folgt aufgeteilt.
+The Project Directory is structured as follows.
 
-## `.setup` - Ordner
-Hier befinden sich Zusatzdateien, welche für die einrichtung der
-Docker-Container nötig sind.
+## `.setup` - Folder
+this contains additional files required for the Docker-Compose Setup.
 
 ### `./.setup/000-default.conf` 
-Dies ist die Config für den [php_server](#container-1-ist-der-php_server)
+This is the Config für den [php_server](#container-1-php_server)s Apache2 Install
 
 ### `./.setup/database.Dockerfile`
-Dockerfile um den [db_server](#container-2-ist-der-db_server) zu konstruieren
+This Dockerfile constructs the [db_server](#container-2-db_server)
 
 ### `./.setup/database.sql`
-Enthällt die initialen Anweisungen um eine Datenbank sammt Benutzer zu
-erzeugen. 
+This contains all SQL-Querys to create the Database and initial Data from scratch.
 > [!attention]  
-> Sollten Sie Datenbank-Name, -Benutzer oder -Passwort ändern,
-> muss dies auch in der `docker-compose.yml` des Projekt-Hauptverzeichnisses
-> angepasst werden.
+> Should you want to change the Database-Name, -User or -Password,
+> you must also change the Environment vars in the `docker-compose.yml` 
 
 ### `./.setup/server.Dockerfile`
-Dockerfile um den [php_server](#container-1-ist-der-php_server) zu konstruieren.
+Dockerfile to build the [php_server](#container-1-php_server)
 
-## `.docker-compose.yml` - Datei
-Die Hauptkonfiguration der Umgebung. Sie sollten diese nicht ändern müssen.
+## `.docker-compose.yml`
+Main Configuration for the Composition. You should not need to change this by hand.
 
-## `database` - Ordner
-Der [db_server](#container-2-ist-der-db_server) wird seine Datenbank-Daten in diesem Ordner Ablegen.
+## `database` - Folder
+the [db_server](#container-2-db_server) will store it's data here.
 
 ## `app` - Order
-Hauptordner für den [php_server](#container-1-ist-der-php_server)
-Da es sich hierbei um ein CakePHP - Projekt handelt, ist der DokumentRoot allerdings `app/webroot`.
+Main-Folder for the [php_server](#container-1-php_server)
+Since this is a CakePHP - Project, the DokumentRoot will be `app/webroot` though.
 
 
-# Server-Umgebung starten 
-Im terminal in das Hauptverzeichnis des Projektes wechseln und folgendes eingeben.
+# Starting the Envorinment
+In the Terminal, CD into the Project Folder and run.
 ```bash
 docker-compose up -d
 ```
+then you should be able to acces the Server via http://localhost:8081.
 
-Danach sollte der Server unter http://localhost:8081 aufrufbar sein.
 
-
-# Alle Server herrunterfahren
-Im terminal in das Hauptverzeichniss des Projektes wechseln und folgendes eingeben.
+# Shutting down all Servers
+In the Terminal, CD into the Project Folder and run.
 ```bash
 docker-compose down 
 ```
 > [!Note]
-> Es kann ein paar sekunden dauern, bis alle Server erfolgreich herruntergefahren wurden.
+> It will take a few seconds for the Server to propperly shut down.

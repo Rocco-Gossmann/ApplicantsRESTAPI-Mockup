@@ -15,17 +15,17 @@ Provides a List of all currently registered applicants .
 
 ## Required Headers:
 
-| Header        | Description                                       | Example            |
-|---------------|---------------------------------------------------|--------------------|
-| Authorization | A bearer JWT - Token provided by the API-Provider | `Bearer: abc3fe==` |
+| Header          | Description                                       | Example            |
+|-----------------|---------------------------------------------------|--------------------|
+| `Authorization` | A bearer JWT - Token provided by the API-Provider | `Bearer abc3...fe` |
 
 ## Response Codes
 
 | Code | Content-Type | Description                                                                                   |
 |------|--------------|-----------------------------------------------------------------------------------------------|
 | 200  | JSON         | List of applicants   (see [Success Response](#success-response))<br><br>                      |
+| 403  | None         | The JWT Token you used is invalid                                                             |
 | 500  | Text or HTML | A Server-Side technical error occured. Should that keep happening, please contact the support |
-| 403  | Text         | The Token you used is no longer valid                                                         |
 
 ## Success Response
 

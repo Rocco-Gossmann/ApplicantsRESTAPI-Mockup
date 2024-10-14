@@ -1,14 +1,25 @@
 # AppManMockup
 
-Eine Demo-Application zum demonstrieren eines REST basierten Bewerber-Management
+A Demo-Application to demonstrate REST based CRUD-Opperations for Applicant-Management
 via [CakePHP 5.x](https://cakephp.org/)
 
-Dies dient nur zur Veranschaulichung ist keines wegs Production ready.
+This is just a Demonstration and by no means production-ready
 
-Weitere Informationen:
+#Project-Structure :
 
 - [Projekt-Struktur und Ordner](./documentation/Projekt_Structur.md)  
 (Lesen Sie dies, bevor Sie das Projekt einrichten und zum ersten mal starten)
+
+## Authorization
+
+All Endpoints are secured via JWT Bearer-Token, that Must be passed in the Request-Headers. `Authorization` Field.
+
+The Token was signed with a secret, that must be set in the Servers Env-Vars. 
+the name of the Env-Var is `JWT_TOKEN_SECRET`
+
+>[!warning]  
+> This is a Demo Application, so any validly signed Token will work.
+
 
 ## API - Endpunkte
 <small>(Click to see Documentation)</small>

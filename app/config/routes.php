@@ -21,6 +21,9 @@
  * @license       https://opensource.org/licenses/mit-license.php MIT License
  */
 
+use Cake\Http\Response;
+use Cake\Http\Runner;
+use Cake\Http\ServerRequest;
 use Cake\Routing\Route\DashedRoute;
 use Cake\Routing\RouteBuilder;
 
@@ -49,14 +52,51 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
 
-    $routes->scope("/api", function(RouteBuilder $builder){
-        $aApplicantIDPattern = ['id'=>'[0-9]+'];
+    $routes->scope("/api/applicants", function (RouteBuilder $builder) {
 
-        $builder->get("/applicants", 'Applicants::getApplicants');
-        $builder->post("/applicants", 'Applicants::postApplicants');
-        $builder->get("/applicants/{id}", 'Applicants::getApplicant')->setPatterns($aApplicantIDPattern);
-        $builder->put("/applicants/{id}", 'Applicants::putApplicant')->setPatterns($aApplicantIDPattern);
-        $builder->delete("/applicants/{id}", 'Applicants::deleteApplicant')->setPatterns($aApplicantIDPattern);
+        // Since this is a Dummy, I'll only check the JWT for the body and signature
+        // and expect the header to always be { "alg":"HS256", "typ":"JWT" }
+        $builder->registerMiddleware("custom_jwt", function (ServerRequest $req, Runner $runner) {
+
+            $o403Response = (new Response())
+                ->withStatus(403)
+                ->withHeader("content-type", "text/plain");
+
+            $aTokenMatch = $aTokenChunks = [];
+
+            // Parse Bearer Token
+            if (
+                empty($sAuthHeader = $req->getEnv("HTTP_AUTHORIZATION"))
+                ||!preg_match("/^Bearer (?P<token>.+)$/", $sAuthHeader, $aTokenMatch)
+                ||empty($sToken = $aTokenMatch['token']??"")
+                ||count($aTokenChunks = explode(".", $sToken, 3)) != 3
+            ) return $o403Response;
+
+            // check Signature
+            if(strcmp(
+                hash_hmac('sha256', $aTokenChunks[0].".".$aTokenChunks[1], getenv("JWT_TOKEN_SECRET"), true),
+                base64_decode(str_replace(
+                    ["_", "-"],
+                    ["/", "+"], 
+                    $aTokenChunks[2]
+                ))
+            )) return $o403Response;
+
+            // ... Do further checks on the Token itself. 
+            // Since that is just a Demo and I have no specifics in the Task,
+            // I'll stop here. Having a correctly signed Token should be enough
+
+            return $runner->handle($req);
+
+        })->applyMiddleware('custom_jwt');
+
+        $aApplicantIDPattern = ['id' => '[0-9]+'];
+
+        $builder->get("/", 'Applicants::getApplicants');
+        $builder->post("/", 'Applicants::postApplicants');
+        $builder->get("/{id}", 'Applicants::getApplicant')->setPatterns($aApplicantIDPattern);
+        $builder->put("/{id}", 'Applicants::putApplicant')->setPatterns($aApplicantIDPattern);
+        $builder->delete("/{id}", 'Applicants::deleteApplicant')->setPatterns($aApplicantIDPattern);
     });
 
 
