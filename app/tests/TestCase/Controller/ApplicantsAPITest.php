@@ -20,10 +20,20 @@ class ApplicantsAPITest extends TestCase
     public static function setUpBeforeClass(): void
     { self::$iUniqueID = time(); }
 
+
+    public function testJWTMiddlewareLockout(): void {
+        $oResult = Curl::GET()->url("http://localhost:8081/api/applicants")
+            ->exec();
+
+        $this->assertNotEmpty($oResult);
+        $this->assertEquals(403, $oResult->status);
+    }
+
     // GET /api/applicants
     public function testGetApplicants(): void
     {
         $oResult = Curl::GET()->url("http://localhost:8081/api/applicants")
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->exec();
 
         $this->_assertCurlSuccess($oResult);
@@ -36,6 +46,7 @@ class ApplicantsAPITest extends TestCase
     {
         $oResult = Curl::GET()->url("http://localhost:8081/api/applicants")
             ->header("accept", "application/json")
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->exec();
 
         $this->_assertCurlSuccess($oResult);
@@ -50,6 +61,7 @@ class ApplicantsAPITest extends TestCase
     {
         $oResult = Curl::POST()->url("http://localhost:8081/api/applicants")
             ->header("content-type", "application/json")
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->body(json_encode([
                 [
                     "gender" => "female",
@@ -93,6 +105,7 @@ class ApplicantsAPITest extends TestCase
     {
         $oResult = Curl::POST()->url("http://localhost:8081/api/applicants")
             ->header("content-type", "application/json")
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->body(json_encode([
                 [
                     "gender" => "female",
@@ -123,6 +136,7 @@ class ApplicantsAPITest extends TestCase
         $this->assertGreaterThan(0, count(self::$aCleanupApplicants));
 
         $oResult = Curl::GET()->url("http://localhost:8081/api/applicants/" . self::$aCleanupApplicants[0])
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->exec();
 
         $this->_assertCurlSuccess($oResult);
@@ -146,6 +160,7 @@ class ApplicantsAPITest extends TestCase
         ];
 
         $oResult = Curl::PUT()->url("http://localhost:8081/api/applicants/" . self::$aCleanupApplicants[1])
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->header("content-type", "application/json")
             ->body(json_encode($aReqBody))
             ->exec();
@@ -176,6 +191,7 @@ class ApplicantsAPITest extends TestCase
 
         foreach (self::$aCleanupApplicants as $iApplicant) {
             $oResult = Curl::DELETE()->url("http://localhost:8081/api/applicants/" . $iApplicant)
+                ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
                 ->exec();
 
             $this->_assertCurlSuccess($oResult);
@@ -186,6 +202,7 @@ class ApplicantsAPITest extends TestCase
     public function testDeleteADeletedApplicant()
     {
         $oResult = Curl::DELETE()->url("http://localhost:8081/api/applicants/" . self::$aCleanupApplicants[0])
+            ->header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb21haW4iOiJzb21lLmNsaWVudCIsImlhdCI6MTUxNjIzOTAyMn0.D4naDQwGt451KIzkpKVGPeTHKBfqIVvRegwUKH12SdA")
             ->exec();
 
         $this->_assertCurlSuccess($oResult);
