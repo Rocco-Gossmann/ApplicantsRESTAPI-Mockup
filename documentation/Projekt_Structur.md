@@ -33,7 +33,6 @@ with PHP-Composer and CakePHP as well as all needed PHP-Extensions.
 This is a MariaDB - Database server that comes preinstalled with the 
 `mycli` database - client. If you want to change the Database, attach to the containers shell and run `mycli`
 
-
 # Installing the Project
 
 1.) Make sure you have Docker and Docker-Compose running on your System
@@ -42,14 +41,21 @@ This is a MariaDB - Database server that comes preinstalled with the
 ```bash
 git clone https://github.com/rocco-gossmann/AppManMockup
 ```
+
 3.) CD into the Project
 ```bash
 cd AppManMockup
 ```
 
-4.) Run the Composition via
+4.) Initialize the Projects Submodules
 ```bash
-docker-compose up
+git submodule init
+git submodule update
+```
+
+5.) Run the Composition via
+```bash
+docker-compose up -d
 ```
 > [!note]  
 > The first Start will take some time, because Docker needs to Download and
@@ -57,9 +63,11 @@ docker-compose up
 >
 > All following starts will be much quicker.
 
-5.) Wait a few seconds.
+6.) Wait a few seconds.
 On your first Start, PHP-Composer needs to download and install all required packages.
 This can also take a minute, depending on your Network-Speed.
+
+7.) Now you can access the Project by calling http://localhost:8081 in the Browser
 
 
 # Project Folders
