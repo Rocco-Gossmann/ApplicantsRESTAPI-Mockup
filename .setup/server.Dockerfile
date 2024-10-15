@@ -1,6 +1,14 @@
 FROM ubuntu/apache2
-
 COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
+
+WORKDIR /var/www/html
+
+RUN <<EOF
+
+echo "composer install -q & " >> /root/startup.sh
+echo "apache2-foreground" >> /root/startup.sh
+
+EOF
 
 RUN <<EOF
 
@@ -37,9 +45,4 @@ PHPINI
 
 EOF
 
-RUN cd <<EOF 
-
-cd /var/www/html
-composer install -q
-
-EOF
+CMD ["sh", "/root/startup.sh"]

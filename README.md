@@ -10,7 +10,8 @@ Failing to do so, will always return a `403 Forbidden` Status Response.
 > This is a Demo Application. To keep it simple, any validly signed Token will work.
 
 ## Documentation
-- [Project-Setup](./documentation/Projekt_Structur.md)
+- [Project-Setup](./documentation/Projekt_Structur.md) 
+    - [Install-Guide](./documentation/Projekt_Structur.md#installing-the-project) 
 - [Database-Structure](./documentation/database.md)
 
 

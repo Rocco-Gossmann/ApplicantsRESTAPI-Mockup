@@ -51,12 +51,16 @@ cd AppManMockup
 ```bash
 docker-compose up
 ```
-
 > [!info]  
 > The first Start will take some time, because Docker needs to Download and
 > install all required files and applications in the Containers.
 >
 > All following starts will be much quicker.
+
+5.) Wait a few seconds.
+On your first Start, PHP-Composer needs to download and install all required packages.
+This can also take a minute, depending on your Network-Speed.
+
 
 # Project Folders
 
