@@ -6,7 +6,7 @@ A Demo-Application to demonstrate REST based CRUD-Opperations for Applicant-Mana
 Calling any Endpoint in this API will require a signed JWT-Token that is passed in via the `Authorization` Request Header.
 Failing to do so, will always return a `403 Forbidden` Status Response.
 
-> [!Attention]
+> [!warning]
 > This is a Demo Application. To keep it simple, any validly signed Token will work.
 
 ## Documentation
