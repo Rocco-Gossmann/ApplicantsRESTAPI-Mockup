@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS cities (
     modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
     CONSTRAINT cities_pk PRIMARY KEY(ci_id),
+    CONSTRAINT cities_countries_fk FOREIGN KEY(co_id) REFERENCES countries(co_id) ON DELETE RESTRICT,
     CONSTRAINT cities_unique_zip UNIQUE(ci_zip)
 );
 
@@ -72,7 +73,7 @@ CREATE TABLE IF NOT EXISTS applicants(
     modified DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
     CONSTRAINT applicants_pk PRIMARY KEY(a_id),
-    CONSTRAINT applicants_cities_fk FOREIGN KEY(ci_id) REFERENCES cities(ci_id) ON DELETE RESTRICT
+    CONSTRAINT applicants_cities_fk FOREIGN KEY(ci_id) REFERENCES cities(ci_id) ON DELETE RESTRICT,
 
-    UNIQUE KEY applicants_unique (`a_firstname`,`a_lastname`,`a_city_street`,`ci_id`) USING HASH,
+    UNIQUE KEY applicants_unique (`a_firstname`,`a_lastname`,`ci_id`) USING HASH
 );
