@@ -51,7 +51,7 @@ cd AppManMockup
 ```bash
 docker-compose up
 ```
-> [!info]  
+> [!note]  
 > The first Start will take some time, because Docker needs to Download and
 > install all required files and applications in the Containers.
 >
@@ -77,7 +77,7 @@ This Dockerfile constructs the [db_server](#container-2-db_server)
 
 ### `./.setup/database.sql`
 This contains all SQL - Queries to create the Database and initial Data from scratch.
-> [!attention]  
+> [!warning]  
 > Should you want to change the Database-Name, -User or -Password,
 > you must also change the Environment vars in the `docker-compose.yml` 
 
