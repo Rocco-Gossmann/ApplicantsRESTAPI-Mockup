@@ -1,4 +1,4 @@
-# `PUT /api/applicants/{id}
+# `PUT /api/applicants/{id}`
 
 <!--toc:start-->
 - [`PUT /api/applicants/{id}](#put-apiapplicantsid)
